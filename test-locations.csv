@@ -1,0 +1,9 @@
+geoname_id,locale_code,continent_code,continent_name,country_iso_code,country_name,is_in_european_union
+49518,en,AF,Africa,RW,Rwanda,0
+51537,en,AF,Africa,SO,Somalia,0
+69543,en,AS,Asia,YE,Yemen,0
+99237,en,AS,Asia,IQ,Iraq,0
+102358,en,AS,Asia,SA,"Saudi Arabia",0
+130758,en,AS,Asia,IR,Iran,0
+146669,en,EU,Europe,CY,Cyprus,1
+149590,en,AF,Africa,TZ,Tanzania,0
