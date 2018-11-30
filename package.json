@@ -8,5 +8,11 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "csv": "5.0.0",
+    "ip-cidr": "2.0.0",
+    "multistream": "2.1.1",
+    "ramda": "0.26.1"
+  }
 }
