@@ -79,7 +79,7 @@ let geoNames = null;
             return resolve(names)
         })
     })
-
+    
     await new Promise((resolve, reject) => {
         console.time('doTheWork')
         console.log("> doTheWork")
