@@ -1,17 +1,49 @@
 const fs = require('fs')
 const parse = require('csv-parse')
+const path = require('path')
 const transform = require('stream-transform')
 const stringify = require('csv-stringify')
 const multistream = require('multistream')
 const ipcidr = require('ip-cidr')
 const R = require('ramda')
+const argv = require('minimist')(process.argv.slice(2))
 
-const inputs = [
-    fs.createReadStream('data/GeoLite2-Country-Blocks-IPv4.csv'),
-    fs.createReadStream('data/GeoLite2-Country-Blocks-IPv6.csv')
-]
-const geoLookup = fs.createReadStream('data/GeoLite2-Country-Locations-en.csv')
-const output = fs.createWriteStream('data/GeoIPCountryWhois.csv')
+let resolved = 0
+let unresolved = 0
+
+// handle arguments
+let indir
+let outdir
+
+const handleArguments = () => {
+    if (!argv.indir && !argv.indir) {
+        indir = './data'
+        outdir = './data'
+    }
+    if (argv.indir && !argv.outdir) outdir = argv.indir
+    if (!argv.indir && argv.outdir) {
+        indir = './data'
+        outdir = argv.outdir
+    }
+    if (argv.outdir) outdir = argv.outdir
+    if (argv.indir) indir = argv.indir
+    console.dir(`INDIR: ${path.resolve(indir)} -- OUTDIR: ${path.resolve(outdir)}`);
+}
+handleArguments()
+
+const ipv4rs = fs.createReadStream(path.resolve(indir, 'GeoLite2-Country-Blocks-IPv4.csv'))
+ipv4rs.on('error', (err) => { console.error(err.message); process.exit(1) })
+
+const ipv6rs = fs.createReadStream(path.resolve(indir, 'GeoLite2-Country-Blocks-IPv6.csv'))
+ipv6rs.on('error', (err) => { console.error(err.message); process.exit(1) })
+
+const geoLookup = fs.createReadStream(path.resolve(indir, 'GeoLite2-Country-Locations-en.csv'))
+geoLookup.on('error', (err) => { console.error(err.message); process.exit(1) })
+
+const output = fs.createWriteStream(path.resolve(outdir, 'GeoIPCountryWhois.csv'))
+output.on('error', (err) => { console.error(err.message); process.exit(1) })
+
+const inputs = [ ipv4rs, ipv6rs]
 const parser = parse({})
 const stringifier = stringify({quoted: true})
 
@@ -34,8 +66,10 @@ const resolveIps = transform((line) => R.pipe(R.insertAll(1, convertCidrToRange(
 const getGeoInfo = (geoid) => {
     const info = geoNames.get(geoid);
     if (info) {
+        resolved++
         return [info.iso, info.name]
     }
+    unresolved++
     return ['ZZ', `Unknown ${geoid}`]
 }
 
@@ -79,7 +113,7 @@ let geoNames = null;
             return resolve(names)
         })
     })
-    
+
     await new Promise((resolve, reject) => {
         console.time('doTheWork')
         console.log("> doTheWork")
@@ -94,6 +128,7 @@ let geoNames = null;
             .pipe(output)
             .on('close', () => {
                 console.timeEnd('doTheWork')
+                console.log(`INFO: ${resolved} resolved, ${unresolved} unresolved (about ${ Math.round( (unresolved * 100 / resolved) * 100 + Number.EPSILON ) / 100 }%).`)
                 resolve()
             })
     })
